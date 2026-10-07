@@ -12,7 +12,7 @@
     "send": "\r"
   },
   {
-    "waitNew": "cache till"
+    "waitNew": "(~"
   },
   {
     "idle": 800

@@ -5,7 +5,7 @@
 After each agent run, OMO posts one TPS line. This extension keeps that line and adds the local time the run's last reply started and when the prompt cache is expected to expire:
 
 ```
-TPS 52.3 tok/s. Cache hit 98.1%, 12.4s. 14:32:05, cache till 15:32
+TPS 52.3 tok/s. Cache hit 98.1%, 12.4s. 14:32:05 (~15:32)
 ```
 
 The cache lifetime restarts with every request. It comes from senpi's own per-model TTL (`resolvePromptCacheTtlSeconds`): 1 hour on a Claude subscription, 5 minutes on Anthropic API keys. When senpi knows no TTL for the model, only the time is shown.

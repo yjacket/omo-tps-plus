@@ -81,7 +81,7 @@ describe("wrap", () => {
 		await emit("message_start", reply);
 		await emit("message_start", { message: { role: "toolResult" } });
 		await emit("agent_end", { messages: [] }, ctx);
-		expect(notes).toEqual([[`${UPSTREAM_LINE}. 14:33:09, cache till 15:33`, "info"]]);
+		expect(notes).toEqual([[`${UPSTREAM_LINE}. 14:33:09 (~15:33)`, "info"]]);
 	});
 
 	for (const [name, resolve] of [

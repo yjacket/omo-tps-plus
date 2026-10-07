@@ -5,7 +5,7 @@
 OMO는 에이전트 실행이 끝날 때마다 TPS 한 줄을 띄웁니다. 이 확장은 그 줄을 그대로 두고, 그 실행의 마지막 응답이 시작된 로컬 시각과 프롬프트 캐시 만료 예상 시각을 덧붙입니다.
 
 ```
-TPS 52.3 tok/s. Cache hit 98.1%, 12.4s. 14:32:05, cache till 15:32
+TPS 52.3 tok/s. Cache hit 98.1%, 12.4s. 14:32:05 (~15:32)
 ```
 
 캐시 수명은 요청할 때마다 다시 시작됩니다. 수명 값은 senpi가 모델별로 계산하는 TTL(`resolvePromptCacheTtlSeconds`)을 씁니다. Claude 구독은 1시간, Anthropic API 키는 5분입니다. senpi가 TTL을 모르는 모델이면 시각만 표시합니다.

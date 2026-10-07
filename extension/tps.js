@@ -62,7 +62,7 @@ export function wrap(pi, upstream) {
 	const stamp = (message, model) => {
 		if (typeof message !== "string" || lastReplyAt === null) return message;
 		const ttl = cacheTtlSeconds(model);
-		const cache = ttl === undefined ? "" : `, cache till ${clock(lastReplyAt + ttl * 1000).slice(0, 5)}`;
+		const cache = ttl === undefined ? "" : ` (~${clock(lastReplyAt + ttl * 1000).slice(0, 5)})`;
 		return `${message.replace(/[.\s]+$/, "")}. ${clock(lastReplyAt)}${cache}`;
 	};
 	const api = new Proxy(pi, {
