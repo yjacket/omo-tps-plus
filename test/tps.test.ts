@@ -39,10 +39,11 @@ function makePi() {
 	return { pi, emit, handlers };
 }
 
-function makeCtx() {
+function makeCtx(model?: unknown) {
 	const notes: Note[] = [];
 	class Ctx {
 		#ui = true;
+		model = model;
 		get hasUI() {
 			return this.#ui;
 		}
@@ -58,18 +59,19 @@ function fakeUpstream(pi: { on(name: string, handler: Handler): void }) {
 	});
 }
 
-async function load(name: string, senpi: Record<string, unknown>) {
+async function load(name: string, senpi: Record<string, unknown>, piAi: Record<string, unknown> = {}) {
 	mock.module("@code-yeongyu/senpi", () => ({ getPackageDir: undefined, ...senpi }));
+	mock.module("@earendil-works/pi-ai", () => ({ resolvePromptCacheTtlSeconds: undefined, ...piAi }));
 	return import(`../extension/tps.js?case=${name}`);
 }
 
 const reply = { message: { role: "assistant" } };
 
 describe("wrap", () => {
-	test("appends the time the last reply started to the upstream notice", async () => {
-		const { wrap } = await load("wrap", {});
+	test("appends when the last reply started and when the model's cache expires", async () => {
+		const { wrap } = await load("wrap", {}, { resolvePromptCacheTtlSeconds: (model: { ttl: number }) => model.ttl });
 		const { pi, emit } = makePi();
-		const { ctx, notes } = makeCtx();
+		const { ctx, notes } = makeCtx({ ttl: 3600 });
 		wrap(pi, fakeUpstream);
 		await emit("agent_start", {});
 		setSystemTime(new Date(2026, 9, 7, 14, 32, 5));
@@ -79,8 +81,26 @@ describe("wrap", () => {
 		await emit("message_start", reply);
 		await emit("message_start", { message: { role: "toolResult" } });
 		await emit("agent_end", { messages: [] }, ctx);
-		expect(notes).toEqual([[`${UPSTREAM_LINE}. Last reply 14:33:09`, "info"]]);
+		expect(notes).toEqual([[`${UPSTREAM_LINE}. 14:33:09, cache till 15:33`, "info"]]);
 	});
+
+	for (const [name, resolve] of [
+		["no-ttl", () => undefined],
+		["ttl-throws", () => {
+			throw new Error("boom");
+		}],
+	] as const) {
+		test(`shows only the reply time when the model has no known cache TTL (${name})`, async () => {
+			const { wrap } = await load(name, {}, { resolvePromptCacheTtlSeconds: resolve });
+			const { pi, emit } = makePi();
+			const { ctx, notes } = makeCtx({ id: "m" });
+			wrap(pi, fakeUpstream);
+			setSystemTime(new Date(2026, 9, 7, 14, 32, 5));
+			await emit("message_start", reply);
+			await emit("agent_end", { messages: [] }, ctx);
+			expect(notes).toEqual([[`${UPSTREAM_LINE}. 14:32:05`, "info"]]);
+		});
+	}
 
 	test("leaves the notice unchanged when no reply started in this run", async () => {
 		const { wrap } = await load("noreply", {});
@@ -126,7 +146,7 @@ describe("default export", () => {
 		await emit("agent_start", {});
 		await emit("message_start", reply);
 		await emit("agent_end", { messages: [] }, ctx);
-		expect(notes).toEqual([[`${UPSTREAM_LINE}. Last reply 09:05:00`, "info"]]);
+		expect(notes).toEqual([[`${UPSTREAM_LINE}. 09:05:00`, "info"]]);
 	});
 
 	test("prefers the flat layout when the package dir is dist itself", async () => {

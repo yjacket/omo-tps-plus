@@ -4,7 +4,7 @@ This file guides Claude Code (claude.ai/code) in this repository.
 
 ## What this is
 
-`extension/tps.js` is an OMO/Senpi extension installed as `<agentDir>/extensions/tps.js` in place of the shim OMO generates for its builtin `tps` extension. It loads that builtin from the running senpi package and appends `. Last reply HH:MM:SS` to the notice it posts at `agent_end`. README.md is the user-facing spec; README.ko.md mirrors it with the same headings.
+`extension/tps.js` is an OMO/Senpi extension installed as `<agentDir>/extensions/tps.js` in place of the shim OMO generates for its builtin `tps` extension. It loads that builtin from the running senpi package and appends `. HH:MM:SS, cache till HH:MM` to the notice it posts at `agent_end` (reply start time from the last assistant `message_start`; TTL from pi-ai `resolvePromptCacheTtlSeconds(ctx.model)`, omitted when undefined or throwing). README.md is the user-facing spec; README.ko.md mirrors it with the same headings.
 
 ## Commands
 
@@ -27,4 +27,4 @@ sh install.sh   |   .\install.ps1
 
 ## Testing
 
-Tests mock `@code-yeongyu/senpi` with `mock.module` and import a fresh copy with a `?case=` query. Every mock must declare the same keys (`getPackageDir`): a key absent from the first mock cannot be added by a later one. Use `setSystemTime` for clock values; no sleeps.
+Tests mock `@code-yeongyu/senpi` and `@earendil-works/pi-ai` with `mock.module` and import a fresh copy with a `?case=` query. Every mock must declare the same keys (`getPackageDir`, `resolvePromptCacheTtlSeconds`): a key absent from the first mock cannot be added by a later one. Use `setSystemTime` for clock values; no sleeps.
