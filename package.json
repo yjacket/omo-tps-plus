@@ -1,0 +1,13 @@
+{
+  "name": "omo-tps-plus",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OMO/Senpi extension: keeps senpi's own TPS line and adds the time the last reply started, so you can tell whether the prompt cache has gone cold.",
+  "scripts": {
+    "test": "bun test"
+  },
+  "engines": {
+    "bun": ">=1.4"
+  }
+}

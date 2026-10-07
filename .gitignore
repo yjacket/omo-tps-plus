@@ -1,0 +1,3 @@
+# host session state written into the working tree by omo/senpi
+.omo/
+node_modules/

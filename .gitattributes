@@ -1,0 +1,2 @@
+# keep LF on every checkout (install.sh must run in Git Bash; the installed extension stays byte-identical)
+* text=auto eol=lf

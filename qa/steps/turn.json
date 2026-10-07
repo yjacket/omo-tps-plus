@@ -1,0 +1,23 @@
+[
+  {
+    "wait": "[Extensions]"
+  },
+  {
+    "mark": "ready"
+  },
+  {
+    "send": "Reply with exactly: ok"
+  },
+  {
+    "send": "\r"
+  },
+  {
+    "waitNew": "Last reply"
+  },
+  {
+    "idle": 800
+  },
+  {
+    "shot": "turn"
+  }
+]
