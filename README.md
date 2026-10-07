@@ -12,15 +12,21 @@ The cache lifetime restarts with every request. It comes from senpi's own per-mo
 
 ## Install
 
+One line, no clone needed. Windows (PowerShell 5.1):
+
 ```powershell
-.\install.ps1
+irm https://raw.githubusercontent.com/yjacket/omo-tps-plus/master/install.ps1 | iex
 ```
+
+Linux, macOS:
 
 ```sh
-sh install.sh
+curl -fsSL https://raw.githubusercontent.com/yjacket/omo-tps-plus/master/install.sh | sh
 ```
 
-The script copies `extension/tps.js` over `~/.omo/agent/extensions/tps.js` (or the folder named by `OMO_CODING_AGENT_DIR`). It replaces only OMO's generated shim or an earlier omo-tps-plus copy and refuses any other file. Type `/reload` in running sessions.
+The script downloads `extension/tps.js` from this repository's `master` branch over `~/.omo/agent/extensions/tps.js` (or the folder named by `OMO_CODING_AGENT_DIR`). The file is fully downloaded before it replaces the installed one. It replaces only OMO's generated shim or an earlier omo-tps-plus copy and refuses any other file. Run from a clone (`.\install.ps1` or `sh install.sh`), it copies the local file instead. Type `/reload` in running sessions.
+
+On Windows use the PowerShell line: Git Bash's curl may fail with certificate error 60 because it does not read the Windows certificate store.
 
 ## Uninstall
 

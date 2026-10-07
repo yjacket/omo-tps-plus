@@ -1,9 +1,11 @@
 #!/usr/bin/env sh
-# Run from a clone: sh install.sh  (local copy only, no download)
+# One-line install, no clone needed:
+#   curl -fsSL https://raw.githubusercontent.com/yjacket/omo-tps-plus/master/install.sh | sh
+# Run from a clone (sh install.sh) it copies the local file instead.
 set -e
-src="$(cd "$(dirname "$0")" && pwd)/extension/tps.js"
+
+url="https://raw.githubusercontent.com/yjacket/omo-tps-plus/master/extension/tps.js"
 agent="${OMO_CODING_AGENT_DIR:-${SENPI_CODING_AGENT_DIR:-${PI_CODING_AGENT_DIR:-$HOME/.omo/agent}}}"
-[ -f "$src" ] || { echo "missing $src" >&2; exit 1; }
 ext="$agent/extensions"
 dst="$ext/tps.js"
 if [ -f "$dst" ]; then
@@ -13,9 +15,14 @@ if [ -f "$dst" ]; then
 		*) echo "$dst is neither OMO's generated shim nor omo-tps-plus; leaving it alone" >&2; exit 1 ;;
 	esac
 fi
-tmp="$ext/tps.js.tmp-$$"
 mkdir -p "$ext"
-cp "$src" "$tmp"
+tmp="$ext/tps.js.tmp-$$"
+trap 'rm -f "$tmp"' EXIT
+if [ -f "$0" ] && [ -f "$(dirname "$0")/extension/tps.js" ]; then
+	cp "$(dirname "$0")/extension/tps.js" "$tmp"
+else
+	curl -fsSL "$url" -o "$tmp"
+fi
 mv -f "$tmp" "$dst"
 echo "installed -> $dst"
 echo "Type /reload in running omo sessions. Delete the file to get the stock tps back."

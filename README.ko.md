@@ -12,15 +12,21 @@ TPS 52.3 tok/s. Cache hit 98.1%, 12.4s. 14:32:05 (~15:32)
 
 ## 설치
 
+클론 없이 한 줄로 설치합니다. Windows (PowerShell 5.1):
+
 ```powershell
-.\install.ps1
+irm https://raw.githubusercontent.com/yjacket/omo-tps-plus/master/install.ps1 | iex
 ```
+
+Linux, macOS:
 
 ```sh
-sh install.sh
+curl -fsSL https://raw.githubusercontent.com/yjacket/omo-tps-plus/master/install.sh | sh
 ```
 
-스크립트는 `extension/tps.js`를 `~/.omo/agent/extensions/tps.js`(또는 `OMO_CODING_AGENT_DIR`가 가리키는 폴더)에 덮어씁니다. OMO가 생성한 연결 파일이나 이전 omo-tps-plus 사본만 교체하고, 다른 파일이면 거부합니다. 실행 중인 세션에서는 `/reload`를 입력하세요.
+스크립트가 이 저장소 `master` 브랜치에서 `extension/tps.js`를 받아 `~/.omo/agent/extensions/tps.js`(또는 `OMO_CODING_AGENT_DIR`가 가리키는 폴더)에 덮어씁니다. 파일은 끝까지 다 받은 뒤에 기존 파일과 바꿉니다. OMO가 생성한 연결 파일이나 이전 omo-tps-plus 사본만 교체하고, 다른 파일이면 거부합니다. 클론한 폴더에서 `.\install.ps1`이나 `sh install.sh`로 실행하면 받지 않고 그 폴더의 파일을 복사합니다. 실행 중인 세션에서는 `/reload`를 입력하세요.
+
+Windows에서는 PowerShell 줄을 쓰세요. Git Bash의 curl은 Windows 인증서 저장소를 읽지 않아 인증서 오류(60)로 실패할 수 있습니다.
 
 ## 제거
 
