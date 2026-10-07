@@ -19,16 +19,6 @@ export function clock(ms) {
 	return [date.getHours(), date.getMinutes(), date.getSeconds()].map((n) => String(n).padStart(2, "0")).join(":");
 }
 
-const UPSTREAM_SHAPE = /^TPS (\d+(?:\.\d+)?) tok\/s\. Cache hit (\d+(?:\.\d+)?)%, (\d+(?:\.\d+)?)s$/;
-
-export function align(message) {
-	const match = UPSTREAM_SHAPE.exec(message);
-	if (!match) return message;
-	const [, tps, hit, seconds] = match;
-	const fit = (value, width) => (value.length > width ? String(Math.round(Number(value))) : value).padStart(width);
-	return `TPS ${fit(tps, 6)} tok/s. Cache hit ${fit(hit, 5)}%, ${fit(seconds, 6)}s`;
-}
-
 export function cacheTtlSeconds(model) {
 	if (!model || typeof piAi.resolvePromptCacheTtlSeconds !== "function") return undefined;
 	try {
@@ -73,7 +63,7 @@ export function wrap(pi, upstream) {
 		if (typeof message !== "string" || lastReplyAt === null) return message;
 		const ttl = cacheTtlSeconds(model);
 		const cache = ttl === undefined ? "" : `, cache till ${clock(lastReplyAt + ttl * 1000).slice(0, 5)}`;
-		return `${align(message.replace(/[.\s]+$/, ""))}. ${clock(lastReplyAt)}${cache}`;
+		return `${message.replace(/[.\s]+$/, "")}. ${clock(lastReplyAt)}${cache}`;
 	};
 	const api = new Proxy(pi, {
 		get(target, key) {

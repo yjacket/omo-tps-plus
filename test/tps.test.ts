@@ -7,7 +7,6 @@ type Handler = (event: unknown, ctx?: unknown) => unknown;
 type Note = [string, string | undefined];
 
 const UPSTREAM_LINE = "TPS 10.0 tok/s. Cache hit 50.0%, 1.0s";
-const ALIGNED_LINE = "TPS   10.0 tok/s. Cache hit  50.0%,    1.0s";
 const UPSTREAM_SOURCE = `export default function (pi) {
 	pi.on("agent_end", (_event, ctx) => { if (ctx.hasUI) ctx.ui.notify(${JSON.stringify(UPSTREAM_LINE)}, "info"); });
 }
@@ -82,47 +81,7 @@ describe("wrap", () => {
 		await emit("message_start", reply);
 		await emit("message_start", { message: { role: "toolResult" } });
 		await emit("agent_end", { messages: [] }, ctx);
-		expect(notes).toEqual([[`${ALIGNED_LINE}. 14:33:09, cache till 15:33`, "info"]]);
-	});
-
-	test("pads the upstream numbers so the times line up from run to run", async () => {
-		const { wrap } = await load("align", {}, { resolvePromptCacheTtlSeconds: () => 3600 });
-		const { pi, emit } = makePi();
-		const { ctx, notes } = makeCtx({ id: "m" });
-		const lines = [
-			"TPS 9.5 tok/s. Cache hit 100.0%, 123.4s",
-			"TPS 212.0 tok/s. Cache hit 4.2%, 0.0s",
-			"TPS 10653.1 tok/s. Cache hit 47.6%, 0.0s",
-			"TPS 88.0 tok/s. Cache hit 99.0%, 12345.6s",
-		];
-		wrap(pi, (api: { on(name: string, handler: Handler): void }) => {
-			api.on("agent_end", (_event, c) => (c as { ui: { notify(m: string, l: string): void } }).ui.notify(lines.shift() ?? "", "info"));
-		});
-		setSystemTime(new Date(2026, 9, 7, 9, 5, 0));
-		for (let run = 0; run < 4; run++) {
-			await emit("agent_start", {});
-			await emit("message_start", reply);
-			await emit("agent_end", { messages: [] }, ctx);
-		}
-		expect(notes.map(([m]) => m)).toEqual([
-			"TPS    9.5 tok/s. Cache hit 100.0%,  123.4s. 09:05:00, cache till 10:05",
-			"TPS  212.0 tok/s. Cache hit   4.2%,    0.0s. 09:05:00, cache till 10:05",
-			"TPS  10653 tok/s. Cache hit  47.6%,    0.0s. 09:05:00, cache till 10:05",
-			"TPS   88.0 tok/s. Cache hit  99.0%,  12346s. 09:05:00, cache till 10:05",
-		]);
-	});
-
-	test("appends to an upstream line of unknown shape without reformatting it", async () => {
-		const { wrap } = await load("unknown-shape", {});
-		const { pi, emit } = makePi();
-		const { ctx, notes } = makeCtx();
-		wrap(pi, (api: { on(name: string, handler: Handler): void }) => {
-			api.on("agent_end", (_event, c) => (c as { ui: { notify(m: string, l: string): void } }).ui.notify("TPS 5 tok/s (new format)", "info"));
-		});
-		setSystemTime(new Date(2026, 9, 7, 9, 5, 0));
-		await emit("message_start", reply);
-		await emit("agent_end", { messages: [] }, ctx);
-		expect(notes).toEqual([["TPS 5 tok/s (new format). 09:05:00", "info"]]);
+		expect(notes).toEqual([[`${UPSTREAM_LINE}. 14:33:09, cache till 15:33`, "info"]]);
 	});
 
 	for (const [name, resolve] of [
@@ -139,7 +98,7 @@ describe("wrap", () => {
 			setSystemTime(new Date(2026, 9, 7, 14, 32, 5));
 			await emit("message_start", reply);
 			await emit("agent_end", { messages: [] }, ctx);
-			expect(notes).toEqual([[`${ALIGNED_LINE}. 14:32:05`, "info"]]);
+			expect(notes).toEqual([[`${UPSTREAM_LINE}. 14:32:05`, "info"]]);
 		});
 	}
 
@@ -187,7 +146,7 @@ describe("default export", () => {
 		await emit("agent_start", {});
 		await emit("message_start", reply);
 		await emit("agent_end", { messages: [] }, ctx);
-		expect(notes).toEqual([[`${ALIGNED_LINE}. 09:05:00`, "info"]]);
+		expect(notes).toEqual([[`${UPSTREAM_LINE}. 09:05:00`, "info"]]);
 	});
 
 	test("prefers the flat layout when the package dir is dist itself", async () => {

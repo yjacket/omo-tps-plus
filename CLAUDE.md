@@ -21,7 +21,7 @@ sh install.sh   |   .\install.ps1
 
 ## Invariants
 
-- Never copy upstream tps logic; only wrap it. `align` pads the three numbers (widths 6, 5, 6; a value longer than its width loses its decimals) only when the line matches `UPSTREAM_SHAPE`; any other shape is appended to unchanged. Upstream reports absurd TPS such as 10653.1 when a short reply arrives in one burst (elapsed 0.0s), so widths must not assume sane values.
+- Never copy upstream tps logic; only wrap it.
 - Only `agent_end` handlers get a wrapped context, and only `ui.notify` is changed. Everything else passes through bound to its original object.
 - If upstream cannot load, register nothing but one `session_start` warning; never throw from the factory.
 
