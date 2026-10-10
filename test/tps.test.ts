@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, mock, setSystemTime, test } from "bun:test";
+import { afterAll, afterEach, describe, expect, jest, mock, setSystemTime, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -17,6 +17,7 @@ afterAll(() => {
 	for (const dir of temps) rmSync(dir, { recursive: true, force: true });
 });
 afterEach(() => {
+	jest.useRealTimers();
 	setSystemTime();
 });
 
@@ -41,15 +42,19 @@ function makePi() {
 
 function makeCtx(model?: unknown) {
 	const notes: Note[] = [];
+	const status: Note[] = [];
 	class Ctx {
 		#ui = true;
 		model = model;
 		get hasUI() {
 			return this.#ui;
 		}
-		ui = { notify: (message: string, level?: string) => notes.push([message, level]) };
+		ui = {
+			notify: (message: string, level?: string) => notes.push([message, level]),
+			setStatus: (key: string, text?: string) => status.push([key, text]),
+		};
 	}
-	return { ctx: new Ctx(), notes };
+	return { ctx: new Ctx(), notes, status };
 }
 
 function fakeUpstream(pi: { on(name: string, handler: Handler): void }) {
@@ -129,6 +134,67 @@ describe("wrap", () => {
 		await emit("message_end", event, ctx);
 		expect(seen).toEqual([7, true, event, ctx]);
 		expect(seen[3]).toBe(ctx);
+	});
+});
+
+describe("footer", () => {
+	const ttlOf = { resolvePromptCacheTtlSeconds: (model: { ttl?: number }) => model.ttl };
+	const fire = (minutes: number): Note => ["cache-ttl", `🔥 ${minutes}m`];
+
+	async function start(name: string, model: unknown = { ttl: 300 }) {
+		const { wrap } = await load(name, {}, ttlOf);
+		const { pi, emit } = makePi();
+		const made = makeCtx(model);
+		wrap(pi, fakeUpstream);
+		jest.useFakeTimers();
+		jest.setSystemTime(new Date(2026, 9, 7, 14, 33, 9));
+		await emit("message_start", reply, made.ctx);
+		return { emit, ...made };
+	}
+
+	test("counts the cache down by the minute and turns to ice when it expires", async () => {
+		const { status } = await start("footer-countdown");
+		expect(status).toEqual([fire(5)]);
+		jest.advanceTimersByTime(59_999);
+		expect(status).toEqual([fire(5)]);
+		jest.advanceTimersByTime(1);
+		expect(status).toEqual([fire(5), fire(4)]);
+		jest.advanceTimersByTime(60 * 60_000);
+		expect(status).toEqual([fire(5), fire(4), fire(3), fire(2), fire(1), ["cache-ttl", "🧊"]]);
+	});
+
+	test("a new reply restarts the countdown", async () => {
+		const { emit, ctx, status } = await start("footer-restart");
+		jest.advanceTimersByTime(2 * 60_000 + 30_000);
+		await emit("message_start", reply, ctx);
+		jest.advanceTimersByTime(60_000);
+		expect(status).toEqual([fire(5), fire(4), fire(3), fire(5), fire(4)]);
+	});
+
+	for (const event of ["model_select", "session_shutdown"]) {
+		test(`${event} clears the status and stops the countdown`, async () => {
+			const { emit, ctx, status } = await start(`footer-${event}`);
+			await emit(event, {}, ctx);
+			jest.advanceTimersByTime(60 * 60_000);
+			expect(status).toEqual([fire(5), ["cache-ttl", undefined]]);
+		});
+	}
+
+	test("shows nothing when the model has no known cache TTL", async () => {
+		const { status } = await start("footer-no-ttl", {});
+		jest.advanceTimersByTime(60 * 60_000);
+		expect(status).toEqual([["cache-ttl", undefined]]);
+	});
+
+	test("stops without throwing once the context has gone stale", async () => {
+		const { ctx, status } = await start("footer-stale");
+		Object.defineProperty(ctx, "ui", {
+			get() {
+				throw new Error("stale ctx");
+			},
+		});
+		expect(() => jest.advanceTimersByTime(60 * 60_000)).not.toThrow();
+		expect(status).toEqual([fire(5)]);
 	});
 });
 

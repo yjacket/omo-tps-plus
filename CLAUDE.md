@@ -4,7 +4,7 @@ This file guides Claude Code (claude.ai/code) in this repository.
 
 ## What this is
 
-`extension/tps.js` is an OMO/Senpi extension installed as `<agentDir>/extensions/tps.js` in place of the shim OMO generates for its builtin `tps` extension. It loads that builtin from the running senpi package and appends `. HH:MM:SS (~HH:MM)` to the notice it posts at `agent_end` (reply start time from the last assistant `message_start`; TTL from pi-ai `resolvePromptCacheTtlSeconds(ctx.model)`, omitted when undefined or throwing). README.md is the user-facing spec; README.ko.md mirrors it with the same headings.
+`extension/tps.js` is an OMO/Senpi extension installed as `<agentDir>/extensions/tps.js` in place of the shim OMO generates for its builtin `tps` extension. It loads that builtin from the running senpi package and appends `. HH:MM:SS (~HH:MM)` to the notice it posts at `agent_end` (reply start time from the last assistant `message_start`; TTL from pi-ai `resolvePromptCacheTtlSeconds(ctx.model)`, omitted when undefined or throwing). It also keeps the footer status `cache-ttl` (`ctx.ui.setStatus`): `🔥 <minutes>m` counting down from that same `message_start` to the TTL, `🧊` after it, cleared on `model_select` and `session_shutdown`. README.md is the user-facing spec; README.ko.md mirrors it with the same headings.
 
 ## Commands
 
@@ -24,7 +24,8 @@ sh install.sh   |   .\install.ps1
 - Never copy upstream tps logic; only wrap it.
 - Only `agent_end` handlers get a wrapped context, and only `ui.notify` is changed. Everything else passes through bound to its original object.
 - If upstream cannot load, register nothing but one `session_start` warning; never throw from the factory.
+- The footer runs on one unref'd `setTimeout` chain that recomputes from `Date.now()` and re-arms for the next minute boundary. It runs outside senpi's handler dispatch, so a throwing `ctx` (stale after reload or session switch) must end it instead of reaching the host.
 
 ## Testing
 
-Tests mock `@code-yeongyu/senpi` and `@earendil-works/pi-ai` with `mock.module` and import a fresh copy with a `?case=` query. Every mock must declare the same keys (`getPackageDir`, `resolvePromptCacheTtlSeconds`): a key absent from the first mock cannot be added by a later one. Use `setSystemTime` for clock values; no sleeps.
+Tests mock `@code-yeongyu/senpi` and `@earendil-works/pi-ai` with `mock.module` and import a fresh copy with a `?case=` query. Every mock must declare the same keys (`getPackageDir`, `resolvePromptCacheTtlSeconds`): a key absent from the first mock cannot be added by a later one. Use `setSystemTime` for clock values and `jest.useFakeTimers()` for the footer timer; no sleeps.
