@@ -4,7 +4,7 @@ This file guides Claude Code (claude.ai/code) in this repository.
 
 ## What this is
 
-`extension/tps.js` is an OMO/Senpi extension installed as `<agentDir>/extensions/tps.js` in place of the shim OMO generates for its builtin `tps` extension. It loads that builtin from the running senpi package and appends `. HH:MM:SS (~HH:MM)` to the notice it posts at `agent_end` (reply start time from the last assistant `message_start`; TTL from pi-ai `resolvePromptCacheTtlSeconds(ctx.model)`, omitted when undefined or throwing). It also keeps the footer status `cache-ttl` (`ctx.ui.setStatus`): `🔥 <minutes>m` counting down from that same `message_start` to the TTL, `🧊` after it, cleared on `model_select` and `session_shutdown`. README.md is the user-facing spec; README.ko.md mirrors it with the same headings.
+`extension/tps.js` is an OMO/Senpi extension installed as `<agentDir>/extensions/tps.js` in place of the shim OMO generates for its builtin `tps` extension. It loads that builtin from the running senpi package and appends `. HH:MM:SS (~HH:MM)` to the notice it posts at `agent_end` (reply start time from the last assistant `message_start`; TTL from pi-ai `resolvePromptCacheTtlSeconds(ctx.model)`, omitted when undefined or throwing). It also keeps the footer status `cache-ttl` (`ctx.ui.setStatus`): `🔥 <minutes>m` counting down from that same `message_start` to the TTL, `🧊` after it. `session_start` (startup, reload, resume, fork) restarts the count from the last assistant message `timestamp` on `ctx.sessionManager.getBranch()` (`🧊` with none), `model_select` shows `🧊` (the cache is per model), `session_shutdown` clears it. README.md is the user-facing spec; README.ko.md mirrors it with the same headings.
 
 ## Commands
 

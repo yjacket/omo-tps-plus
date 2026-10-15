@@ -171,12 +171,50 @@ describe("footer", () => {
 		expect(status).toEqual([fire(5), fire(4), fire(3), fire(5), fire(4)]);
 	});
 
-	for (const event of ["model_select", "session_shutdown"]) {
-		test(`${event} clears the status and stops the countdown`, async () => {
-			const { emit, ctx, status } = await start(`footer-${event}`);
-			await emit(event, {}, ctx);
-			jest.advanceTimersByTime(60 * 60_000);
-			expect(status).toEqual([fire(5), ["cache-ttl", undefined]]);
+	test("session_shutdown clears the status and stops the countdown", async () => {
+		const { emit, ctx, status } = await start("footer-shutdown");
+		await emit("session_shutdown", {}, ctx);
+		jest.advanceTimersByTime(60 * 60_000);
+		expect(status).toEqual([fire(5), ["cache-ttl", undefined]]);
+	});
+
+	test("model_select shows the new model's cache as cold and stops the countdown", async () => {
+		const { emit, ctx, status } = await start("footer-model");
+		await emit("model_select", {}, ctx);
+		jest.advanceTimersByTime(60 * 60_000);
+		expect(status).toEqual([fire(5), ["cache-ttl", "🧊"]]);
+	});
+
+	async function resume(name: string, branch: unknown[]) {
+		const { wrap } = await load(name, {}, ttlOf);
+		const { pi, emit } = makePi();
+		const made = makeCtx({ ttl: 300 });
+		Object.assign(made.ctx, { sessionManager: { getBranch: () => branch } });
+		wrap(pi, fakeUpstream);
+		jest.useFakeTimers();
+		jest.setSystemTime(new Date(2026, 9, 7, 14, 33, 9));
+		await emit("session_start", { reason: "reload" }, made.ctx);
+		return made.status;
+	}
+	const entry = (role: string, secondsAgo: number) => ({
+		type: "message",
+		message: { role, timestamp: new Date(2026, 9, 7, 14, 33, 9).getTime() - secondsAgo * 1000 },
+	});
+
+	test("session_start resumes the countdown from the last reply on the branch", async () => {
+		const status = await resume("footer-resume", [entry("assistant", 200), entry("assistant", 90), entry("user", 10)]);
+		expect(status).toEqual([fire(4)]);
+		jest.advanceTimersByTime(30_000);
+		expect(status).toEqual([fire(4), fire(3)]);
+	});
+
+	for (const [name, branch] of [
+		["empty", []],
+		["expired", [entry("assistant", 301)]],
+	] as const) {
+		test(`session_start shows ice when no reply keeps the cache warm (${name})`, async () => {
+			const status = await resume(`footer-resume-${name}`, [...branch]);
+			expect(status).toEqual([["cache-ttl", "🧊"]]);
 		});
 	}
 
@@ -204,10 +242,10 @@ describe("default export", () => {
 		mkdirSync(join(pkg, "dist", "core", "extensions", "builtin"), { recursive: true });
 		writeFileSync(join(pkg, "dist", "core", "extensions", "builtin", "tps.js"), UPSTREAM_SOURCE);
 		const mod = await load("found", { getPackageDir: () => pkg });
-		const { pi, emit, handlers } = makePi();
+		const { pi, emit } = makePi();
 		const { ctx, notes } = makeCtx();
 		await mod.default(pi);
-		expect(handlers.has("session_start")).toBe(false);
+		await emit("session_start", {}, ctx);
 		setSystemTime(new Date(2026, 9, 7, 9, 5, 0));
 		await emit("agent_start", {});
 		await emit("message_start", reply);

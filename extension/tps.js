@@ -78,6 +78,13 @@ export function wrap(pi, upstream) {
 		timer = setTimeout(showCache, left % 60000 || 60000);
 		timer.unref?.();
 	};
+	// A cache warmed at `startedAt` (undefined: never warmed, so cold) on the context's model; no TTL shows nothing.
+	const trackCache = (ctx, startedAt) => {
+		statusCtx = ctx;
+		const ttl = cacheTtlSeconds(ctx?.model);
+		cacheUntil = ttl === undefined ? null : (startedAt ?? 0) + ttl * 1000;
+		showCache();
+	};
 	const forgetCache = () => {
 		cacheUntil = null;
 		showCache();
@@ -88,12 +95,18 @@ export function wrap(pi, upstream) {
 	pi.on("message_start", (event, ctx) => {
 		if (event?.message?.role !== "assistant") return;
 		lastReplyAt = Date.now();
-		const ttl = cacheTtlSeconds(ctx?.model);
-		statusCtx = ctx;
-		cacheUntil = ttl === undefined ? null : lastReplyAt + ttl * 1000;
-		showCache();
+		trackCache(ctx, lastReplyAt);
 	});
-	pi.on("model_select", forgetCache);
+	// Start, reload and session switch: pick the count up from the last reply on the branch.
+	pi.on("session_start", (_event, ctx) => {
+		const replies = (ctx?.sessionManager?.getBranch?.() ?? []).filter(
+			(entry) => entry?.type === "message" && entry.message?.role === "assistant",
+		);
+		const startedAt = replies.at(-1)?.message?.timestamp;
+		trackCache(ctx, Number.isFinite(startedAt) ? startedAt : undefined);
+	});
+	// The prompt cache belongs to one model, so a newly selected model starts cold.
+	pi.on("model_select", (_event, ctx) => trackCache(ctx, undefined));
 	pi.on("session_shutdown", forgetCache);
 	const stamp = (message, model) => {
 		if (typeof message !== "string" || lastReplyAt === null) return message;

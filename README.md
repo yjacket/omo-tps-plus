@@ -17,7 +17,7 @@ While the session stays open, the footer status line counts that lifetime down a
 🧊        the cache has expired
 ```
 
-The count restarts with every reply and is cleared when you switch models. Nothing is shown until the first reply after a session starts or reloads, or when senpi knows no TTL for the model.
+The count restarts with every reply. When a session starts, reloads or switches, it picks up from the last reply in the conversation; with no reply yet it shows 🧊. Switching models shows 🧊, because each model has its own cache. Nothing is shown when senpi knows no TTL for the model.
 
 ## Install
 
