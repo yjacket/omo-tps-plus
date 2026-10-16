@@ -2,6 +2,8 @@
 
 [한국어](README.ko.md)
 
+> **No longer updated.** The footer status moved to [omo-statusbar](https://github.com/yjacket/omo-statusbar) as `omo-cache`: minutes the cache has left, then the time since it expired. The time appended to the TPS line is not carried over. To switch, delete `~/.omo/agent/extensions/tps.js` (OMO writes its stock file back on the next start) and run `omo install git:github.com/yjacket/omo-statusbar`.
+
 After each agent run, OMO posts one TPS line. This extension keeps that line and adds the local time the run's last reply started and when the prompt cache is expected to expire:
 
 ```

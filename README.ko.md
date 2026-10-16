@@ -2,6 +2,8 @@
 
 [English](README.md)
 
+> **더 이상 업데이트하지 않습니다.** 푸터 상태 기능은 [omo-statusbar](https://github.com/yjacket/omo-statusbar)의 `omo-cache`로 옮겨졌습니다. 캐시가 남은 분을 보여 주고, 만료된 뒤에는 만료 후 지난 시간을 보여 줍니다. TPS 줄 끝에 붙이던 시각은 옮기지 않았습니다. 옮기려면 `~/.omo/agent/extensions/tps.js`를 지우고(다음 시작 때 OMO가 기본 파일을 다시 씁니다) `omo install git:github.com/yjacket/omo-statusbar`를 실행하세요.
+
 OMO는 에이전트 실행이 끝날 때마다 TPS 한 줄을 띄웁니다. 이 확장은 그 줄을 그대로 두고, 그 실행의 마지막 응답이 시작된 로컬 시각과 프롬프트 캐시 만료 예상 시각을 덧붙입니다.
 
 ```
