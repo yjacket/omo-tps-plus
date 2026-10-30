@@ -1,3 +1,6 @@
+> [!WARNING]
+> **Deprecated — do not install or use.** This extension is deprecated and must not be installed or used. Replacement: none.
+
 # omo-tps-plus
 
 [한국어](README.ko.md)
